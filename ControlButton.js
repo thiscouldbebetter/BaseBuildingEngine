@@ -1,50 +1,28 @@
- 
-function ControlButton(name, pos, size, text, click, context, colorBack)
+
+function ControlButton(name, size, text, click, context, colorBack)
 {
 	this.name = name;
-	this.pos = pos;	
 	this.size = size;
-	this.text = text;	
+	this.text = text;
 	this.click = click;
 	this.context = context;
 	this.colorBack = colorBack;
 }
 
 {
-	ControlButton.prototype.containsPos = function(posToCheck)
+	ControlButton.prototype.domElementUpdate = function()
 	{
-		return Control.doesControlContainPos(this, posToCheck);
-	}
- 
-	ControlButton.prototype.draw = function(display)
-	{
-		var posAbsolute = this.posAbsolute();
- 
-		display.drawRectangle
-		(
-			posAbsolute, 
-			this.size, 
-			display.colorFore,
-			this.colorBack
-		);
- 
-		display.drawTextAtPos
-		(
-			this.text,
-			posAbsolute
-		);
-	}
- 
-	ControlButton.prototype.mouseClick = function(mouseClickPosAbsolute)
-	{
-		if (this.containsPos(mouseClickPosAbsolute) == true)
+		if (this._domElement == null)
 		{
-			this.click(this);
+			this._domElement = document.createElement("button");
+			this._domElement.innerHTML = this.text;
+			this._domElement.style.backgroundColor = this.colorBack;
+			this._domElement.style.width = this.size.x + "px";
+			this._domElement.style.height = this.size.y + "px";
+			this._domElement.onclick = this.click;
+			this._domElement.value = this.context;
 		}
-	}
- 
-	ControlButton.prototype.posAbsolute = function()
-	{
-		return Control.controlPosAbsolute(this);
+
+		return this._domElement;
 	}
 }

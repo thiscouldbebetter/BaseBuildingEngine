@@ -1,4 +1,4 @@
- 
+
 function Mover(defnName, factionName, orientation, pos)
 {
 	this.defnName = defnName;
@@ -12,37 +12,37 @@ function Mover(defnName, factionName, orientation, pos)
 	{
 		return Globals.Instance.world.moverDefns[this.defnName];
 	}
- 
+
 	Mover.prototype.faction = function()
 	{
 		return Globals.Instance.world.factions[this.factionName];
 	}
-	
+
 	Mover.prototype.name = function()
 	{
 		return this.factionName + " " + this.defnName;
 	}
- 
+
 	Mover.prototype.initialize = function()
 	{
 		var defn = this.defn();
 		this.integrity = defn.integrityMax;
 		this.movePoints = defn.movePointsPerTurn;
 	}
-	
+
 	// drawable
-	
+
 	Mover.prototype.draw = function(display, map, isMoverActive)
 	{
 		var mover = this;
 		var moverDefn = mover.defn();
- 
+
 		var mapCellSizeInPixels = map.cellSizeInPixels;
 		var mapCellSizeInPixelsHalf = map.cellSizeInPixelsHalf;
- 
+
 		var drawPos = display._drawPos;
 		var drawPos2 = display._drawPos2;
- 
+
 		drawPos.overwriteWith
 		(
 			mover.pos
@@ -56,11 +56,11 @@ function Mover(defnName, factionName, orientation, pos)
 		(
 			mapCellSizeInPixelsHalf
 		);
- 
+
 		var radius = mapCellSizeInPixelsHalf.x;
- 
+
 		var colorStroke = (isMoverActive == true ? display.colorHighlight : display.colorFore);
- 
+
 		display.drawCircle
 		(
 			drawPos,
@@ -68,7 +68,7 @@ function Mover(defnName, factionName, orientation, pos)
 			colorStroke,
 			mover.faction().color
 		);
- 
+
 		drawPos2.overwriteWith
 		(
 			mover.orientation
@@ -79,13 +79,13 @@ function Mover(defnName, factionName, orientation, pos)
 		(
 			drawPos
 		);
- 
+
 		display.drawLine(drawPos, drawPos2, colorStroke);
- 
+
 		drawPos.subtract(mapCellSizeInPixelsHalf);
- 
+
 		display.drawTextAtPos(" " + moverDefn.codeChar, drawPos, colorStroke);
-		
+
 		if (isMoverActive == true)
 		{
 			if (this.targetPos != null)
@@ -106,5 +106,5 @@ function Mover(defnName, factionName, orientation, pos)
 				display.drawCircle(drawPos, radius / 2, colorStroke, "Red");
 			}
 		}
-	}	
+	}
 }

@@ -1,7 +1,4 @@
- 
- 
-// extensions
- 
+
 function ArrayExtensions()
 {
 	// extension class
@@ -16,10 +13,10 @@ function ArrayExtensions()
 			var key = item[keyName];
 			this[key] = item;
 		}
- 
+
 		return this;
 	}
- 
+
 	Array.prototype.remove = function(itemToRemove)
 	{
 		var indexToRemoveAt = this.indexOf(itemToRemove);
@@ -28,7 +25,7 @@ function ArrayExtensions()
 			this.removeAt(indexToRemoveAt);
 		}
 	}
- 
+
 	Array.prototype.removeAt = function(indexToRemoveAt)
 	{
 		this.splice
@@ -36,7 +33,7 @@ function ArrayExtensions()
 			indexToRemoveAt, 1
 		);
 	}
-	
+
 	Array.prototype.select = function(fieldName)
 	{
 		var returnValues = [];

@@ -8,7 +8,7 @@ function ResourceGroup(resources)
 	{
 		return this.resourcesAdd(other.resources);
 	}
-	
+
 	ResourceGroup.prototype.clear = function()
 	{
 		for (var i = 0; i < this.resources.length; i++)
@@ -17,7 +17,7 @@ function ResourceGroup(resources)
 			resource.quantity = 0;
 		}
 	}
-	
+
 	ResourceGroup.prototype.resourceAdd = function(resourceToAdd)
 	{
 		var defnName = resourceToAdd.defnName;
@@ -29,10 +29,10 @@ function ResourceGroup(resources)
 			this.resources[defnName] = resourceToAddTo;
 		}
 		resourceToAddTo.quantity += resourceToAdd.quantity;
-		
+
 		return this;
 	}
-	
+
 	ResourceGroup.prototype.resourcesAdd = function(resourcesToAdd)
 	{
 		for (var i = 0; i < resourcesToAdd.length; i++)
@@ -40,7 +40,7 @@ function ResourceGroup(resources)
 			var resource = resourcesToAdd[i];
 			this.resourceAdd(resource);
 		}
-		
+
 		return this;
 	}
 }

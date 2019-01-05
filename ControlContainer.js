@@ -1,11 +1,10 @@
- 
-function ControlContainer(name, pos, size, children)
+
+function ControlContainer(name, children, hasBorder)
 {
 	this.name = name;
-	this.pos = pos;	
-	this.size = size;
 	this.children = children;
- 
+	this.hasBorder = (hasBorder == null ? true : hasBorder);
+
 	for (var i = 0; i < this.children.length; i++)
 	{
 		var child = this.children[i];
@@ -14,44 +13,32 @@ function ControlContainer(name, pos, size, children)
 }
 
 {
-	ControlContainer.prototype.containsPos = function(posToCheck)
+	ControlContainer.prototype.domElementUpdate = function(display)
 	{
-		return Control.doesControlContainPos(this, posToCheck);
-	}
- 
-	ControlContainer.prototype.draw = function(display)
-	{
-		var posAbsolute = this.posAbsolute();
-		display.drawRectangle
-		(
-			posAbsolute,
-			this.size,
-			display.colorFore, // border
-			display.colorBack // fill
-		);
- 
 		var children = this.children;
+
+		if (this._domElement == null)
+		{
+			this._domElement = document.createElement("div");
+			if (this.hasBorder == true)
+			{
+				this._domElement.style.border = "1px solid";
+			}
+
+			for (var i = 0; i < children.length; i++)
+			{
+				var child = children[i];
+				var childDomElement = child.domElementUpdate(display);
+				this._domElement.appendChild(childDomElement);
+			}
+		}
+
 		for (var i = 0; i < children.length; i++)
 		{
 			var child = children[i];
-			child.draw(display);
+			child.domElementUpdate(display);
 		}
+
+		return this._domElement;
 	}
- 
-	ControlContainer.prototype.mouseClick = function(mouseClickPosAbsolute)
-	{
-		if (this.containsPos(mouseClickPosAbsolute) == true)
-		{
-			for (var i = 0; i < this.children.length; i++)
-			{
-				var child = this.children[i];
-				child.mouseClick(mouseClickPosAbsolute);
-			}
-		}
-	}
- 
-	ControlContainer.prototype.posAbsolute = function()
-	{
-		return Control.controlPosAbsolute(this);
-	}
-}
+ }

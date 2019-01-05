@@ -1,4 +1,4 @@
- 
+
 function Base(name, pos, demographics, improvements, industry, usage, resources, moversPresent)
 {
 	this.name = name;
@@ -13,27 +13,97 @@ function Base(name, pos, demographics, improvements, industry, usage, resources,
 
 {
 	Base.FoodPerPopulationNeededToGrow = 2;
-	
+
+	Base.prototype.foodProduction = function()
+	{
+		var base = this;
+		var foodProduced = base.resources.resourceGroupProducedPerTurn.resources["Food"].quantity;
+		var foodConsumed = base.demographics.population;
+		var foodNet = foodProduced - foodConsumed;
+		var returnValue = foodProduced + " - " + foodConsumed + " = " + foodNet;
+		return returnValue;
+	}
+
+	Base.prototype.foodStockpiledOverNeededToGrow = function()
+	{
+		var base = this;
+		var resources = base.resources;
+		var foodCurrent =
+			resources.resourceGroupStockpiled.resources["Food"].quantity;
+		var foodPerPopulationNeededToGrow =
+			Base.FoodPerPopulationNeededToGrow;
+		var foodNeededToGrow =
+			base.demographics.population
+			* foodPerPopulationNeededToGrow;
+		var returnValue =
+			foodCurrent + "/" + foodNeededToGrow + " to grow";
+		return returnValue;
+	}
+
+	Base.prototype.industryProduction = function()
+	{
+		var base = this;
+		var industryProduced =
+			base.resources.resourceGroupProducedPerTurn.resources["Industry"].quantity;
+		var industryConsumed = 0;
+		var industrySurplus = industryProduced - industryConsumed;
+		var returnValue = industryProduced + " - " + industryConsumed + " = " + industrySurplus;
+		return returnValue;
+	}
+
+	Base.prototype.industryStockpiledOverNeeded = function()
+	{
+		var returnValue;
+		var base = this;
+		var industry = base.industry;
+		if (industry.buildableInProgressDefnName == null)
+		{
+			returnValue = "[no project]";
+		}
+		else
+		{
+			var industryStockpiled =
+				base.resources.resourceGroupStockpiled.resources["Industry"];
+			var world = Globals.Instance.world; // hack
+			var buildableInProgressDefn = industry.buildableInProgressDefn(world);
+			returnValue =
+				industryStockpiled.quantity
+				+ "/" + buildableInProgressDefn.industryToBuild;
+		}
+		return returnValue;
+	}
+
+	Base.prototype.tradeProduction = function()
+	{
+		var base = this;
+		var tradeProduced =
+			base.resources.resourceGroupProducedPerTurn.resources["Trade"].quantity;
+		var tradeConsumed = 0;
+		var tradeSurplus = tradeProduced - tradeConsumed;
+		var returnValue = tradeProduced + " - " + tradeConsumed + " = " + tradeSurplus;
+		return returnValue;
+	}
+
 	Base.prototype.initialize = function(world)
 	{
 		this.usage.optimize(this, world);
 		this.resources.initialize(this, world);
 	}
-	
+
 	Base.prototype.recalculate = function(world)
 	{
 		this.resources.recalculate(this, world);
 		this.controlInvalidate();
 	}
-	
+
 	Base.prototype.updateForTurn = function(world)
 	{
 		this.resources.updateForTurn(this, world);
 		this.controlInvalidate();
 	}
-	
+
 	// control
-	
+
 	Base.prototype.controlInvalidate = function()
 	{
 		this._control = null;
@@ -43,185 +113,131 @@ function Base(name, pos, demographics, improvements, industry, usage, resources,
 		this.usage._control = null;
 		this.resources._control = null;
 	}
-	
-	Base.prototype.toControl = function(pos, size, world)
-	{ 
+
+	Base.prototype.toControl = function(world)
+	{
 		if (this._control == null)
 		{
 			var base = this;
-			
-			var cellSizeInPixels = new Coords(15, 15);
-						 
+
 			var controlDemographics = this.demographics.toControl
 			(
-				new Coords(1, 1), // pos
-				new Coords(10, 2), // size
-				cellSizeInPixels,
 				this,
 				world
 			);
-			
+
 			var controlImprovements = this.improvements.toControl
 			(
-				new Coords(1, 4), // pos
-				new Coords(10, 2), // size
-				cellSizeInPixels,
 				this,
 				world
 			);
-			
+
 			var controlIndustry = this.industry.toControl
 			(
-				new Coords(1, 7), // pos
-				new Coords(10, 2), // size
-				cellSizeInPixels,
 				this,
 				world
 			);
-			
+
 			var controlUsage = this.usage.toControl
 			(
-				new Coords(12, 1), // pos
-				new Coords(12, 12), // size
-				cellSizeInPixels,
 				this,
 				world
 			);
-			
+
 			var controlMovers = new ControlContainer
 			(
 				"containerMovers",
-				new Coords(1, 10).multiply(cellSizeInPixels), // pos
-				new Coords(10, 2).multiply(cellSizeInPixels), // size
 				[
 					new ControlLabel
 					(
 						"labelUnits",
-						new Coords(0, 0).multiply(cellSizeInPixels),
-						"Units:"
+						"Units Present:"
 					),
-
-					new ControlLabelDynamic
+					new ControlBreak(),
+					new ControlSelect
 					(
-						"infoUnits",
-						new Coords(0, 1).multiply(cellSizeInPixels),
-						function text()
-						{ 
-							var returnValue = "";
-							var movers = base.moversPresent;
-							for (var i = 0; i < movers.length; i++)
-							{
-								var mover = movers[i];
-								if (i > 0)
-								{ 
-									returnValue += ", ";
-								}
-								returnValue += mover.defnName;
-							}
-							return returnValue;
-						}
+						"selectUnits",
+						"defnName", // bindingExpressionForOptionText
+						base.moversPresent,
+						4 // numberOfOptionsVisible
 					),
 				]
 			);
-		
+
 			var controlProduction = new ControlContainer
 			(
 				"containerProduction",
-				new Coords(12, 14).multiply(cellSizeInPixels), // pos
-				new Coords(12, 4).multiply(cellSizeInPixels), // size
 				[
 					new ControlLabel
 					(
 						"labelProduction",
-						new Coords(0, 0).multiply(cellSizeInPixels),
 						"Production:"
 					),
+					new ControlBreak(),
 
 					new ControlLabel
 					(
 						"labelFood",
-						new Coords(0, 1).multiply(cellSizeInPixels),
 						"Food:"
 					),
 					new ControlLabelDynamic
 					(
 						"infoFood",
-						new Coords(3, 1).multiply(cellSizeInPixels),
-						function text() 
-						{ 
-							var foodProduced = base.resources.resourceGroupProducedPerTurn.resources["Food"].quantity;
-							var foodConsumed = base.demographics.population;
-							var foodNet = foodProduced - foodConsumed;
-							var returnValue = foodProduced + " - " + foodConsumed + " = " + foodNet;
-							return returnValue;
-						}
+						new DataBinding(base, "foodProduction()")
 					),
+					new ControlBreak(),
 
 					new ControlLabel
 					(
 						"labelIndustry",
-						new Coords(0, 2).multiply(cellSizeInPixels),
 						"Industry:"
 					),
 					new ControlLabelDynamic
 					(
 						"infoIndustry",
-						new Coords(3, 2).multiply(cellSizeInPixels),
-						function text() 
-						{ 
-							return base.resources.resourceGroupProducedPerTurn.resources["Industry"].quantity;
-						}
+						new DataBinding(base, "industryProduction()")
 					),
-					
+					new ControlBreak(),
+
 					new ControlLabel
 					(
 						"labelTrade",
-						new Coords(0, 3).multiply(cellSizeInPixels),
 						"Trade:"
 					),
 					new ControlLabelDynamic
 					(
 						"infoTrade",
-						new Coords(3, 3).multiply(cellSizeInPixels),
-						function text() 
-						{ 
-							return base.resources.resourceGroupProducedPerTurn.resources["Trade"].quantity;
-						}
+						new DataBinding(base, "tradeProduction()")
 					),
-					
+					new ControlBreak(),
+
 				]
 			);
-			
+
 			var buttonTurnAdvance = new ControlButton
 			(
 				"buttonTurnAdvance",
-				new Coords(1, 19).multiply(cellSizeInPixels), // pos
-				new Coords(23, 1).multiply(cellSizeInPixels), // size
 				"Next Turn",
-				function click() 
-				{ 
+				function click()
+				{
 					base.updateForTurn(world);
 				}
 			);
-						
+
 			this._control = new ControlContainer
 			(
 				"containerBase",
-				pos,
-				size,				
 				[
 					new ControlLabel
 					(
 						"labelName",
-						new Coords(1, 0).multiply(cellSizeInPixels),
 						"Name:"
 					),
 					new ControlLabel
 					(
 						"infoName",
-						new Coords(3, 0).multiply(cellSizeInPixels),
 						this.name
-					),			
+					),
 					controlDemographics,
 					controlImprovements,
 					controlIndustry,
@@ -232,9 +248,9 @@ function Base(name, pos, demographics, improvements, industry, usage, resources,
 				]
 			);
 		}
-		
+
 		return this._control;
-	}	
+	}
 }
 
 function Base_Demographics(population, foodAccumulated)
@@ -242,58 +258,41 @@ function Base_Demographics(population, foodAccumulated)
 	this.population = population;
 	this.foodAccumulated = foodAccumulated;
 }
-{	
-	Base_Demographics.prototype.toControl = function(pos, size, cellSizeInPixels, base)
-	{		
+{
+	Base_Demographics.prototype.toControl = function(base)
+	{
 		if (this._control == null)
 		{
 			this._control = new ControlContainer
 			(
 				"containerDemographics",
-				pos.multiply(cellSizeInPixels), 				
-				size.multiply(cellSizeInPixels),				
 				[
 					new ControlLabel
 					(
 						"labelPopulation",
-						new Coords(0, 0).multiply(cellSizeInPixels),
 						"Population:"
 					),
 					new ControlLabelDynamic
 					(
-						"infoPopulation", 
-						new Coords(4, 0).multiply(cellSizeInPixels), 
-						function text() { return base.demographics.population; }
+						"infoPopulation",
+						new DataBinding(base.demographics, "population")
 					),
+					new ControlBreak(),
+
 					new ControlLabel
 					(
 						"labelFood",
-						new Coords(0, 1).multiply(cellSizeInPixels),
 						"Food:"
 					),
 					new ControlLabelDynamic
 					(
-						"infoFood", 
-						new Coords(2, 1).multiply(cellSizeInPixels), 
-						function text() 
-						{ 
-							var resources = base.resources;
-							var foodCurrent = 
-								resources.resourceGroupStockpiled.resources["Food"].quantity;
-							var foodPerPopulationNeededToGrow = 
-								Base.FoodPerPopulationNeededToGrow;
-							var foodNeededToGrow =
-								base.demographics.population
-								* foodPerPopulationNeededToGrow;
-							var returnValue = 
-								foodCurrent + "/" + foodNeededToGrow + " to grow";
-							return returnValue;
-						}
+						"infoFood",
+						new DataBinding(base, "foodStockpiledOverNeededToGrow()")
 					),
 				]
 			);
 		}
-	
+
 		return this._control;
 	}
 }
@@ -315,52 +314,34 @@ function Base_Improvements(improvementDefnNames)
 		}
 		return returnValues;
 	}
-	
+
 	// controls
-	
-	Base_Improvements.prototype.toControl = function(pos, size, cellSizeInPixels, base, world)
+
+	Base_Improvements.prototype.toControl = function(base, world)
 	{
 		if (this._control == null)
 		{
 			this._control = new ControlContainer
 			(
 				"containerImprovements",
-				pos.multiply(cellSizeInPixels), 				
-				size.multiply(cellSizeInPixels),				
 				[
 					new ControlLabel
 					(
 						"labelImprovements",
-						new Coords(0, 0).multiply(cellSizeInPixels),
-						"Improvements:"
+						"Improvements Built:"
 					),
-					new ControlLabelDynamic
+					new ControlBreak(),
+					new ControlSelect
 					(
-						"infoImprovements", 
-						new Coords(0, 1).multiply(cellSizeInPixels), 
-						function text() 
-						{ 
-							var returnValue = "";
-							var improvementDefnNames =
-								base.improvements.improvementDefnNames;
-							var improvementDefns = world.improvementDefns;
-							for (var i = 0; i < improvementDefnNames.length; i++)
-							{
-								var improvementDefnName = improvementDefnNames[i];
-								if (i > 0)
-								{
-									returnValue += ", ";
-								}
-								var improvementDefn = improvementDefns[improvementDefnName];
-								returnValue += improvementDefn.symbol;
-							}
-							return returnValue;
-						}
+						"selectImprovements",
+						null, // bindingExpressionForOptionText
+						base.improvements.improvementDefnNames, // options
+						3 // numberOfOptionsVisible
 					),
 				]
 			);
 		}
-	
+
 		return this._control;
 	}
 }
@@ -374,97 +355,46 @@ function Base_Industry(buildableInProgressDefnName)
 	{
 		return world.buildableDefns[this.buildableInProgressDefnName];
 	}
-	
+
 	// controls
-	
-	Base_Industry.prototype.toControl = function(pos, size, cellSizeInPixels, base, world)
+
+	Base_Industry.prototype.toControl = function(base, world)
 	{
 		if (this._control == null)
 		{
 			this._control = new ControlContainer
 			(
 				"containerIndustry",
-				pos.multiply(cellSizeInPixels), 				
-				size.multiply(cellSizeInPixels),				
 				[
 					new ControlLabel
 					(
 						"labelBuilding",
-						new Coords(0, 0).multiply(cellSizeInPixels),
 						"Building:"
 					),
-					new ControlLabelDynamic
+					new ControlSelect
 					(
-						"infoBuilding", 
-						new Coords(3, 0).multiply(cellSizeInPixels), 
-						function text()
-						{ 
-							var defnName = base.industry.buildableInProgressDefnName;
-							return (defnName == null ? "[nothing]" : defnName);
-						}
+						"selectBuilding",
+						"name", // bindingExpressionForOptionText
+						world.buildableDefns, // options
+						1, // numberOfOptionsVisible
+						true, // allowNullSelection
+						"name", // bindingExpressionForOptionValue
+						new DataBinding(base.industry, "buildableInProgressDefnName") // bindingForSelectedValue
 					),
-					new ControlButton
-					(
-						"buttonBuildingNext", 
-						new Coords(7, 0).multiply(cellSizeInPixels), 
-						new Coords(2, 1).multiply(cellSizeInPixels),
-						"Next",
-						function click()
-						{
-							var buildableDefnsAvailable = world.buildableDefns;
-							var buildableDefnNamesAvailable =
-								buildableDefnsAvailable.select("name");
-							var industry = base.industry;
-							var buildableToBuildDefnName = industry.buildableInProgressDefnName;
-							var buildableToBuildDefnIndex;
-							if (buildableToBuildDefnName == null)
-							{
-								buildableToBuildDefnIndex = 0;
-							}
-							else
-							{
-								buildableToBuildDefnIndex =
-									buildableDefnNamesAvailable.indexOf(buildableToBuildDefnName) + 1;
-							}
-							buildableToBuildDefnName = buildableDefnNamesAvailable[buildableToBuildDefnIndex];
-							industry.buildableInProgressDefnName = buildableToBuildDefnName;
-						}
-					),					
 					new ControlLabel
 					(
 						"labelProgress",
-						new Coords(0, 1).multiply(cellSizeInPixels),
 						"Progress:"
 					),
 					new ControlLabelDynamic
 					(
-						"infoProgress", 
-						new Coords(3, 1).multiply(cellSizeInPixels), 
-						function text() 
-						{
-							var returnValue;
-							var industry = base.industry;							
-							if (industry.buildableInProgressDefnName == null)
-							{
-								returnValue = "";
-							}
-							else
-							{
-								var industryStockpiled = 
-									base.resources.resourceGroupStockpiled.resources["Industry"];
-								var buildableInProgressDefn = industry.buildableInProgressDefn(world);
-								returnValue = 
-									industryStockpiled.quantity 
-									+ "/"
-									+ buildableInProgressDefn.industryToBuild;
-							}
-							return returnValue;
-						}
+						"infoProgress",
+						new DataBinding(base, "industryStockpiledOverNeeded()")
 					),
 				]
 			);
 		}
-	
+
 		return this._control;
 	}
 }
@@ -476,14 +406,14 @@ function Base_Resources()
 	([
 		new Resource("Food", 0),
 		new Resource("Industry", 0)
-	]);	
+	]);
 }
-{	
+{
 	Base_Resources.prototype.initialize = function(base, world)
 	{
 		this.recalculate(base, world);
 	}
-	
+
 	Base_Resources.prototype.recalculate = function(base, world)
 	{
 		var cellsInUseTerrains = base.usage.cellsInUseTerrains(base, world);
@@ -496,7 +426,7 @@ function Base_Resources()
 			var resourcesProducedByCell = cellTerrain.resourcesProducedPerTurn;
 			resourceGroupProducedByBase.resourcesAdd(resourcesProducedByCell);
 		}
-		
+
 		var improvementDefns = base.improvements.improvementDefns(world);
 		for (var i = 0; i < improvementDefns.length; i++)
 		{
@@ -504,16 +434,16 @@ function Base_Resources()
 			improvementDefn.applyToBase(base);
 		}
 	}
-	
+
 	Base_Resources.prototype.updateForTurn = function(base, world)
 	{
 		this.resourceGroupStockpiled.add(this.resourceGroupProducedPerTurn);
 
 		var foodConsumed = new Resource("Food", 0 - base.demographics.population);
 		this.resourceGroupStockpiled.resourceAdd(foodConsumed);
-		
+
 		var resourcesStockpiled = this.resourceGroupStockpiled.resources;
-		
+
 		var foodStockpiled = resourcesStockpiled["Food"];
 		var population = base.demographics.population;
 		if (foodStockpiled.quantity < 0)
@@ -523,7 +453,7 @@ function Base_Resources()
 		}
 		else
 		{
-			var foodPerPopulationNeededToGrow = 
+			var foodPerPopulationNeededToGrow =
 				Base.FoodPerPopulationNeededToGrow;
 			var foodNeededToGrow =
 				foodPerPopulationNeededToGrow * population;
@@ -544,11 +474,11 @@ function Base_Usage(offsetsOfCellsInUse)
 }
 {
 	Base_Usage.UsageRadiusInCells = 2;
-	
+
 	Base_Usage.prototype.cellAtOffsetIsInUse = function(cellOffsetToCheck)
 	{
 		var returnValue = false;
-		
+
 		for (var i = 0; i < this.offsetsOfCellsInUse.length; i++)
 		{
 			var cellOffsetInUse = this.offsetsOfCellsInUse[i];
@@ -558,10 +488,10 @@ function Base_Usage(offsetsOfCellsInUse)
 				break;
 			}
 		}
-		
+
 		return returnValue;
 	}
-	
+
 	Base_Usage.prototype.cellAtOffsetUseToggle = function(cellOffsetToToggle)
 	{
 		var cellOffsetFound = null;
@@ -583,11 +513,11 @@ function Base_Usage(offsetsOfCellsInUse)
 			this.offsetsOfCellsInUse.remove(cellOffsetFound);
 		}
 	}
-	
+
 	Base_Usage.prototype.cellsInUseTerrains = function(base, world)
 	{
 		var returnValues = [];
-		
+
 		var map = world.map;
 		var basePos = base.pos;
 		var cellPos = new Coords();
@@ -598,19 +528,19 @@ function Base_Usage(offsetsOfCellsInUse)
 			var cellTerrain = map.terrainAtPos(cellPos);
 			returnValues.push(cellTerrain);
 		}
-		
+
 		return returnValues;
 	}
-	
+
 	Base_Usage.prototype.optimize = function(base, world)
-	{				
+	{
 		var population = base.demographics.population;
 
 		while (this.offsetsOfCellsInUse.length > population)
 		{
 			this.offsetsOfCellsInUse.length--;
 		}
-		
+
 		var usageRadiusInCells = Base_Usage.UsageRadiusInCells;
 		var usageDiameterInCells = usageRadiusInCells * 2 + 1;
 		var i = 0;
@@ -627,26 +557,26 @@ function Base_Usage(offsetsOfCellsInUse)
 					Math.floor(i / usageDiameterInCells)
 				)
 			);
-			
+
 			if (this.cellAtOffsetIsInUse(cellOffsetToUse) == false)
 			{
 				this.offsetsOfCellsInUse.push(cellOffsetToUse);
 			}
-			
+
 			i++;
 		}
 	}
-	
+
 	// controls
-	
-	Base_Usage.prototype.toControl = function(pos, size, cellSizeInPixels, base, world)
+
+	Base_Usage.prototype.toControl = function(base, world)
 	{
 		if (this._control == null)
 		{
 			var childControls = [];
-			
+
 			var cellOffset = new Coords();
-			var buttonSize = cellSizeInPixels.clone().multiplyScalar(2);
+			var buttonSize = new Coords(1, 1).multiplyScalar(40);
 			var usageRadiusInCells = Base_Usage.UsageRadiusInCells;
 			var centerInCells = new Coords(1, 1).multiplyScalar(usageRadiusInCells);
 			var basePosInCells = base.pos;
@@ -656,24 +586,18 @@ function Base_Usage(offsetsOfCellsInUse)
 			for (var y = -usageRadiusInCells; y <= usageRadiusInCells; y++)
 			{
 				cellOffset.y = y;
-				
+
 				for (var x = -usageRadiusInCells; x <= usageRadiusInCells; x++)
 				{
 					cellOffset.x = x;
-										
+
 					cellPosInCells
 						.overwriteWith(basePosInCells)
 						.add(cellOffset);
 
 					var cellTerrain = map.terrainAtPos(cellPosInCells);
-												
-					var buttonPos =
-						centerInCells.clone()
-							.add(cellOffset)
-							.multiply(cellSizeInPixels)
-							.multiplyScalar(2);
-					
-					var cellText;					
+
+					var cellText;
 					var isCellInUse = base.usage.cellAtOffsetIsInUse(cellOffset);
 					if (isCellInUse)
 					{
@@ -687,70 +611,66 @@ function Base_Usage(offsetsOfCellsInUse)
 					{
 						cellText = "";
 					}
-					
+
 					var buttonForCellClick;
 					if (cellOffset.equals(zeroes))
 					{
-						buttonForCellClick = function click() 
+						buttonForCellClick = function click()
 						{
 							var usage = base.usage;
-							usage.optimize(base, world); 
+							usage.optimize(base, world);
 							base.recalculate(world);
 						};
 					}
 					else
 					{
-						buttonForCellClick = function click(button) 
-						{ 
-							var cellOffset = button.context;
+						buttonForCellClick = function click()
+						{
+							var cellOffset = this.value;
 							var usage = base.usage;
 							usage.cellAtOffsetUseToggle(cellOffset);
 							base.recalculate(world);
 						};
 					}
-										
+
 					var buttonForCell = new ControlButton
 					(
 						"button" + x + "_" + y,
-						buttonPos,
 						buttonSize,
 						cellText,
 						buttonForCellClick,
 						cellOffset.clone(), // context
 						cellTerrain.color
 					);
-					
+
 					childControls.push(buttonForCell);
 				}
+
+				childControls.push(new ControlBreak());
 			}
-			
+
 			var containerUsageCells = new ControlContainer
 			(
 				"containerUsageCells",
-				new Coords(1, 1).multiply(cellSizeInPixels),
-				cellSizeInPixels.clone().multiplyScalar(2 * usageRadiusInCells + 1).multiplyScalar(2),
 				childControls
 			);
-			
+
 			this._control = new ControlContainer
 			(
 				"containerUsage",
-				pos.multiply(cellSizeInPixels),
-				size.multiply(cellSizeInPixels),
 				[
 					new ControlLabel
 					(
 						"labelUsage",
-						new Coords(0, 0).multiply(cellSizeInPixels),
 						"Usage:"
 					),
-				
+
 					containerUsageCells
 				]
 			);
-			
+
 		}
-	
+
 		return this._control;
 	}
 }

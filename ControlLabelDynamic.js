@@ -1,38 +1,26 @@
 
-function ControlLabelDynamic(name, pos, textFunction)
+function ControlLabelDynamic(name, dataBinding)
 {
 	this.name = name;
-	this.pos = pos;
-	this.textFunction = textFunction;
+	this.dataBinding = dataBinding;
 }
 
 {
-	ControlLabelDynamic.prototype.containsPos = function(posToCheck)
-	{
-		return Control.doesControlContainPos(this, posToCheck);
-	}
- 
-	ControlLabelDynamic.prototype.draw = function(display)
-	{ 
-		display.drawTextAtPos
-		(
-			this.text(),
-			this.posAbsolute()
-		);
-	}
-	
-	ControlLabelDynamic.prototype.mouseClick = function()
-	{
-		// Do nothing.
-	}
- 
-	ControlLabelDynamic.prototype.posAbsolute = function()
-	{
-		return Control.controlPosAbsolute(this);
-	}
-	
 	ControlLabelDynamic.prototype.text = function()
 	{
-		return this.textFunction();
+		return this.dataBinding.get();
+	}
+
+	ControlLabelDynamic.prototype.domElementUpdate = function()
+	{
+		if (this._domElement == null)
+		{
+			this._domElement = document.createElement("label");
+		}
+
+		this._domElement.innerHTML = this.text();
+
+		return this._domElement;
+
 	}
 }

@@ -1,33 +1,19 @@
- 
-function ControlLabel(name, pos, text)
+
+function ControlLabel(name, text)
 {
 	this.name = name;
-	this.pos = pos;	
 	this.text = text;
 }
 
 {
-	ControlLabel.prototype.containsPos = function(posToCheck)
+	ControlLabel.prototype.domElementUpdate = function()
 	{
-		return Control.doesControlContainPos(this, posToCheck);
-	}
- 
-	ControlLabel.prototype.draw = function(display)
-	{ 
-		display.drawTextAtPos
-		(
-			this.text,
-			this.posAbsolute()
-		);
-	}
-	
-	ControlLabel.prototype.mouseClick = function()
-	{
-		// Do nothing.
-	}
- 
-	ControlLabel.prototype.posAbsolute = function()
-	{
-		return Control.controlPosAbsolute(this);
+		if (this._domElement == null)
+		{
+			this._domElement = document.createElement("label");
+			this._domElement.innerHTML = this.text;
+		}
+
+		return this._domElement;
 	}
 }

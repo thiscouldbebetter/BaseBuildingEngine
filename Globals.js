@@ -1,4 +1,4 @@
- 
+
 function Globals()
 {
 	// do nothing
@@ -6,22 +6,16 @@ function Globals()
 
 {
 	// instance
- 
+
 	Globals.Instance = new Globals();
- 
-	Globals.prototype.initialize = function(display, world)
+
+	Globals.prototype.initialize = function(world)
 	{
 		this.world = world;
- 
-		this.display = display;
-		this.display.initialize();
- 
-		this.inputHelper = new InputHelper();
-		this.inputHelper.initialize();
- 
+
 		this.world.initialize();
 	}
- 
+
 	Globals.prototype.update = function()
 	{
 		this.world.update();
