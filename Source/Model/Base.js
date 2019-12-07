@@ -1,17 +1,15 @@
 
-function Base(name, pos, national, demographics, improvements, industry, usage, resources, movers)
+function Base(name, nationName, geography, demographics, improvements, industry, usage, resources, movers)
 {
 	this.name = name;
-	this.pos = pos;
-	this.national = national;
+	this.nationName = nationName;
+	this.geography = geography;
 	this.demographics = demographics;
 	this.improvements = improvements;
 	this.industry = industry;
 	this.usage = usage;
 	this.resources = resources;
 	this.movers = movers;
-
-	this.distanceFromCapital = 5;
 }
 
 {
@@ -83,10 +81,15 @@ function Base(name, pos, national, demographics, improvements, industry, usage, 
 		return returnValue;
 	}
 
+	Base.prototype.nation = function(world)
+	{
+		return world.nations[this.nationName];
+	}
+
 	Base.prototype.researchPerTurn = function(world)
 	{
 		var tradePerTurn = this.tradePerTurn();
-		var incomeAllocation = this.national.incomeAllocation(world);
+		var incomeAllocation = this.nation(world).incomeAllocation(world);
 		var returnValue = Math.round(tradePerTurn * incomeAllocation.researchRate());
 		return returnValue;
 	}
@@ -120,7 +123,7 @@ function Base(name, pos, national, demographics, improvements, industry, usage, 
 		return returnValue;
 	}
 
-	Base.prototype.initialize = function(world)
+	Base.prototype.initialize = function(world, nation)
 	{
 		this.usage.optimize(this, world);
 		this.resources.initialize(this, world);
@@ -132,10 +135,9 @@ function Base(name, pos, national, demographics, improvements, industry, usage, 
 		this.controlInvalidate();
 	}
 
-	Base.prototype.updateForTurn = function(world)
+	Base.prototype.updateForTurn = function(world, nation)
 	{
 		this.resources.updateForTurn(this, world);
-		this.national.updateForTurn(this, world);
 		this.controlInvalidate();
 		world.update();
 	}
@@ -159,7 +161,7 @@ function Base(name, pos, national, demographics, improvements, industry, usage, 
 		{
 			var base = this;
 
-			var controlNational = this.national.toControl(this, world);
+			var controlGeography = this.geography.toControl(this, world);
 			var controlDemographics = this.demographics.toControl(this, world);
 			var controlImprovements = this.improvements.toControl(this, world);
 			var controlIndustry = this.industry.toControl(this, world);
@@ -234,7 +236,7 @@ function Base(name, pos, national, demographics, improvements, industry, usage, 
 				"Next Turn",
 				function click()
 				{
-					base.updateForTurn(world);
+					world.updateForTurn();
 				}
 			);
 
@@ -242,11 +244,7 @@ function Base(name, pos, national, demographics, improvements, industry, usage, 
 			(
 				"containerBase",
 				[
-					controlNational,
-					new ControlLabel("labelBaseName", "Base:"),
-					new ControlLabel("infoName", this.name),
-					new ControlLabel("labelDistanceFromCapital", "Distance from Capital:"),
-					new ControlLabel("infoDistanceFromCapital", this.distanceFromCapital),
+					controlGeography,
 					controlDemographics,
 					controlImprovements,
 					controlIndustry,
@@ -311,6 +309,36 @@ function Base_Demographics(population, foodAccumulated)
 		}
 
 		return this._control;
+	}
+}
+
+function Base_Geography(pos)
+{
+	this.pos = pos;
+}
+{
+	Base_Geography.prototype.distanceFromCapital = function(world, base)
+	{
+		var baseCapital = base.nation(world).baseCapital();
+		var displacementFromCapital = this.pos.clone().subtract(baseCapital.geography.pos);
+		var returnValue = Math.ceil(displacementFromCapital.magnitude());
+		return returnValue;
+	}
+
+	// controls
+
+	Base_Geography.prototype.toControl = function(base, world)
+	{
+		var returnValue = new ControlContainer
+		(
+			"containerGeography",
+			[
+				new ControlLabel("labelDistanceFromCapital", "Distance from Capital:"),
+				new ControlLabel("infoDistanceFromCapital", this.distanceFromCapital(world, base)),
+			]
+		);
+		
+		return returnValue;
 	}
 }
 
@@ -534,140 +562,6 @@ function Base_Movers(moversPresent)
 	}
 }
 
-function Base_National(name, incomeAllocationName, wealthStockpiled, technologyBeingResearchedName, researchStockpiled, technologiesKnownNames)
-{
-	this.name = name;
-	this.incomeAllocationName = incomeAllocationName;
-	this.wealthStockpiled = wealthStockpiled;
-	this.technologyBeingResearchedName = technologyBeingResearchedName;
-	this.researchStockpiled = researchStockpiled;
-	this.technologiesKnownNames = technologiesKnownNames;
-}
-{
-	Base_National.prototype.incomeAllocation = function(world)
-	{
-		return world.incomeAllocations[this.incomeAllocationName];
-	}
-
-	Base_National.prototype.researchStockpiledOverNeeded = function(world)
-	{
-		var researchNeeded;
-		var techBeingResearched = this.technologyBeingResearched(world);
-		if (techBeingResearched == null)
-		{
-			researchNeeded = "-";
-		}
-		else
-		{
-			researchNeeded = techBeingResearched.researchToDiscover;
-		}
-		returnValue = this.researchStockpiled + "/" + researchNeeded;
-
-		return returnValue;
-	}
-
-	Base_National.prototype.technologyBeingResearched = function(world)
-	{
-		var techName = this.technologyBeingResearchedName;
-		return (techName == null ? null : world.technologies[techName]);
-	}
-
-	Base_National.prototype.updateForTurn = function(base, world)
-	{
-		var researchPerTurn = base.researchPerTurn(world);
-		this.researchStockpiled += researchPerTurn;
-		var techBeingResearched = this.technologyBeingResearched(world);
-		if (techBeingResearched != null)
-		{
-			var researchToDiscover = techBeingResearched.researchToDiscover;
-			if (this.researchStockpiled >= researchToDiscover)
-			{
-				this.researchStockpiled -= researchToDiscover;
-				this.technologiesKnownNames.push(this.technologyBeingResearchedName);
-				this.technologyBeingResearchedName = null;
-			}
-		}
-
-		var taxesPerTurn = base.taxesPerTurn(world);
-		this.wealthStockpiled += taxesPerTurn;
-	}
-
-	// controls
-
-	Base_National.prototype.toControl = function(base, world)
-	{
-		if (this._control == null)
-		{
-			this._control = new ControlContainer
-			(
-				"containerBase",
-				[		
-					new ControlLabel("labelNationName", "Nation:"),
-					new ControlLabel("infoNationName", this.name),
-					new ControlBreak(),
-					new ControlLabel("labelTreasury", "Treasury:"),
-					new ControlLabel
-					(
-						"infoTreasury",
-						new DataBinding
-						(
-							this, // context
-							function get(context) { return context.wealthStockpiled; },
-							function set(context, value) { context.wealthStockpiled = value; }
-						)
-					),
-					new ControlBreak(),
-					new ControlLabel("labelIncomeAllocation", "Income Allocation:"),
-					new ControlSelect
-					(
-						"selectResearchRate",
-						function(context) { return context.name; }, // bindingGetForOptionText
-						world.incomeAllocations, // options
-						1, // numberOfOptionsVisible
-						false, // allowNullSelection
-						function(context) { return context; }, // bindingGetForOptionValue
-						new DataBinding
-						(
-							base.national,
-							function get(context) { return context.incomeAllocation(world); },
-							function set(context, value) { context.incomeAllocationName = value; }
-						) // bindingForSelectedValue
-					),
-					new ControlBreak(),
-					new ControlLabel("labelResearching", "Researching:"),
-					new ControlSelect
-					(
-						"selectResearching",
-						function(context) { return context.name; }, // bindingGetForOptionText
-						world.technologies, // options
-						1, // numberOfOptionsVisible
-						true, // allowNullSelection
-						function(context) { return context.name; }, // bindingGetForOptionValue
-						new DataBinding
-						(
-							base.national,
-							function get(context) { return context.technologyBeingResearchedName; },
-							function set(context, value) { context.technologyBeingResearchedName = value; }
-						)
-					),
-					new ControlLabel("labelResearchProgress", "Progress:"),
-					new ControlLabel
-					(
-						"infoResearchProgress",
-						new DataBinding
-						(
-							base, 
-							function(context) { return context.national.researchStockpiledOverNeeded(world); }
-						)
-					),
-				]
-			);
-		}
-
-		return this._control;
-	}
-}
-
 function Base_Resources()
 {
 	this.resourceGroupProducedPerTurn = new ResourceGroup([]);
@@ -695,7 +589,7 @@ function Base_Resources()
 			cell.resourcesProducedPerTurnAddToGroup(resourceGroupProducedByBase, map);
 		}
 
-		var incomeAllocation = base.national.incomeAllocation(world);
+		var incomeAllocation = base.nation(world).incomeAllocation(world);
 		incomeAllocation.resourceGroupAllocate(resourceGroupProducedByBase);
 
 		var improvementDefns = base.improvements.improvementDefns(world);
@@ -795,7 +689,7 @@ function Base_Usage(offsetsOfCellsInUse)
 		var returnValues = [];
 
 		var map = world.map;
-		var basePos = base.pos;
+		var basePos = base.geography.pos;
 		var cellPos = new Coords();
 		for (var i = 0; i < this.offsetsOfCellsInUse.length; i++)
 		{
@@ -855,7 +749,7 @@ function Base_Usage(offsetsOfCellsInUse)
 			var buttonSize = new Coords(1, 1).multiplyScalar(50);
 			var usageRadiusInCells = Base_Usage.UsageRadiusInCells;
 			var centerInCells = new Coords(1, 1).multiplyScalar(usageRadiusInCells);
-			var basePosInCells = base.pos;
+			var basePosInCells = base.geography.pos;
 			var map = world.map;
 			var zeroes = new Coords(0, 0);
 			var resourceGroup = new ResourceGroup([]);

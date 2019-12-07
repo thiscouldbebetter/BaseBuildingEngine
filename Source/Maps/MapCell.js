@@ -7,7 +7,8 @@ function MapCell(terrainCode, hasRoad)
 {
 	MapCell.prototype.resourcesProducedPerTurnAddToGroup = function(resourceGroup, map)
 	{
-		resourceGroup.resourcesAdd(this.terrain(map).resourcesProducedPerTurn);
+		var terrain = this.terrain(map);
+		resourceGroup.resourcesAdd(terrain.resourcesProducedPerTurn);
 		var resourcesSum = resourceGroup.resources;
 		if (this.hasRoad)
 		{

@@ -189,48 +189,77 @@ function main()
 		mapTerrains,
 		// cellsAsStrings
 		[
-			".....r..........",
-			"..*.*r..~.......",
-			"^.@..r..~.^.....",
-			"^.@..r..~.......",
-			"...._r..........",
-			".....r~.~.~.....",
-			".....r..........",
-			".....r..........",
+			".....r..........................",
+			"..*.*r..~.......................",
+			"^.@..r..~.^.....................",
+			"^.@..r..~.......................",
+			"...._r..........................",
+			".....r~.~.~.....................",
+			".....r..........................",
+			".....r..........................",
+			".r.r.r.r.r.r.r.r.r.r.r.r.r.r.r.r",
+			".....r..........................",
+			".....r..........................",
+			".....r..........................",
+			".....r..........................",
+			".....r..........................",
+			".....r..........................",
+			".....r..........................",
 		]
 	);
 
-	var base = new Base
+	var nationName = "Nationia";
+
+	var bases = [];
+	var baseNames = [ "Baseville", "Baseton", "Baseburg" ];
+	var basePositions = [ new Coords(2, 2), new Coords(5, 8), new Coords(15, 8) ];
+	for (var i = 0; i < baseNames.length; i++)
+	{
+		var baseName = baseNames[i];
+		var basePosition = basePositions[i];
+
+		var base = new Base
+		(
+			baseName,
+			nationName,
+			new Base_Geography
+			(
+				basePosition
+			),
+			new Base_Demographics(10),
+			new Base_Improvements
+			([
+				"Granary",
+				"Library",
+				"Marketplace",
+			]),
+			new Base_Industry(null, 10),
+			new Base_Usage(),
+			new Base_Resources(),
+			new Base_Movers
+			(
+				[
+					new Mover("Slugger"),
+					new Mover("Sniper"),
+				] // moversPresent
+			)
+		);
+
+		bases.push(base);
+	}
+
+	var nation = new Nation
 	(
-		"Baseville", // name,
-		new Coords(2, 2), // pos,
-		new Base_National
-		(
-			"Basonia", 
-			incomeAllocations[0].name,
-			100, // currencyStockpiled
-			null, // technologyBeingResearchedName 
-			0, // researchStockpiled
-			[] // technologiesKnownNames
-		),
-		new Base_Demographics(10),
-		new Base_Improvements
-		([
-			"Granary",
-			"Library",
-			"Marketplace",
-		]),
-		new Base_Industry(null, 10),
-		new Base_Usage(),
-		new Base_Resources(),
-		new Base_Movers
-		(
-			[
-				new Mover("Slugger"),
-				new Mover("Sniper"),
-			] // moversPresent
-		)
+		nationName, 
+		incomeAllocations[0].name,
+		100, // currencyStockpiled
+		null, // technologyBeingResearchedName 
+		0, // researchStockpiled
+		[], // technologiesKnownNames
+		bases
 	);
+
+	var nations = [ nation ];
 
 	var world = new World
 	(
@@ -239,7 +268,7 @@ function main()
 		moverDefns,
 		technologies,
 		map,
-		base
+		nations
 	);
 
 	Globals.Instance.initialize(world);
